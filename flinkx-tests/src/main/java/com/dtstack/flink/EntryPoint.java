@@ -30,7 +30,7 @@ public class EntryPoint {
     public static void main(String[] args) {
 
         StreamTableEnvironment tEnv = EnvFactory.createTableEnv();
-        tEnv.fromDataStream(stream)
+
         // Kafka Source
         tEnv.executeSql("CREATE TABLE ods (\n" +
                 "  `id` INT,\n" +
