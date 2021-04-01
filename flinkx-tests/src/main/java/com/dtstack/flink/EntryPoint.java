@@ -30,13 +30,13 @@ public class EntryPoint {
     public static void main(String[] args) {
 
         StreamTableEnvironment tEnv = EnvFactory.createTableEnv();
-
+        tEnv.fromDataStream(stream)
         // Kafka Source
         tEnv.executeSql("CREATE TABLE ods (\n" +
                 "  `id` INT,\n" +
                 "  `name` STRING\n" +
                 ") WITH (\n" +
-                "  'connector' = 'kafka',\n" +
+                "  'connector' = 'dt-kafka',\n" +
                 "  'topic' = 'luna',\n" +
                 "  'properties.bootstrap.servers' = 'localhost:9092',\n" +
                 "  'properties.group.id' = 'luna_g',\n" +

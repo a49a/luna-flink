@@ -9,6 +9,7 @@
   <modules>
     <module>flinkx-connectors</module>
     <module>flinkx-tests</module>
+    <module>flinkx-formats</module>
   </modules>
 
   <packaging>pom</packaging>
