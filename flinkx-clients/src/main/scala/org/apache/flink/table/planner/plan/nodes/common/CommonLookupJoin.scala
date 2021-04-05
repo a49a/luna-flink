@@ -53,7 +53,6 @@ import org.apache.flink.table.types.DataType
 import org.apache.flink.table.types.logical.utils.LogicalTypeUtils.toInternalConversionClass
 import org.apache.flink.table.types.logical.{LogicalType, RowType, TypeInformationRawType}
 import org.apache.flink.types.Row
-
 import com.google.common.primitives.Primitives
 import org.apache.calcite.plan.{RelOptCluster, RelOptTable, RelTraitSet}
 import org.apache.calcite.rel.`type`.{RelDataType, RelDataTypeField}
@@ -65,10 +64,10 @@ import org.apache.calcite.sql.fun.SqlStdOperatorTable
 import org.apache.calcite.sql.validate.SqlValidatorUtil
 import org.apache.calcite.tools.RelBuilder
 import org.apache.calcite.util.mapping.IntPair
+import org.apache.flink.table.connector.ParallelismProvider
 
 import java.util.Collections
 import java.util.concurrent.CompletableFuture
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
@@ -189,6 +188,27 @@ abstract class CommonLookupJoin(
   lazy val tableIdentifier: ObjectIdentifier = temporalTable match {
     case t: TableSourceTable => t.tableIdentifier
     case t: LegacyTableSourceTable[_] => t.tableIdentifier
+  }
+
+  // DTStack fixed customlized parallelism
+  lazy val parallelism: Integer = {
+    temporalTable match {
+      case t: TableSourceTable => {
+        val indices = lookupKeyIndicesInOrder.map(Array(_))
+        val tableSource = t.tableSource.asInstanceOf[LookupTableSource]
+        val providerContext = new LookupRuntimeProviderContext(indices)
+        val provider = tableSource.getLookupRuntimeProvider(providerContext)
+        val parallelismOptional = provider.asInstanceOf[ParallelismProvider].getParallelism
+        if (parallelismOptional.isPresent) {
+          val parallelismPassedIn = parallelismOptional.get().intValue()
+          if (parallelismPassedIn <= 0) {
+            throw new TableException(s"Table: ${tableIdentifier} configured sink parallelism: " +
+              s"$parallelismPassedIn should not be less than zero or equal to zero")
+          }
+          parallelismPassedIn
+        }
+      }
+    }
   }
 
   if (containsPythonCall(joinInfo.getRemaining(cluster.getRexBuilder))) {
