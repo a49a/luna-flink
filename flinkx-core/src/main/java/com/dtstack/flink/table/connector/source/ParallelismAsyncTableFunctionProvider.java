@@ -18,18 +18,35 @@
 
 package com.dtstack.flink.table.connector.source;
 
-import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.api.connector.source.Boundedness;
-import org.apache.flink.api.connector.source.Source;
 import org.apache.flink.table.connector.ParallelismProvider;
-import org.apache.flink.table.connector.source.SourceProvider;
+import org.apache.flink.table.connector.source.AsyncTableFunctionProvider;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.functions.AsyncTableFunction;
+
+import java.util.Optional;
 
 /**
  * @program: luna-flink
  * @author: wuren
  * @create: 2021/04/02
  **/
-public interface ParallelismSourceProvider extends SourceProvider, ParallelismProvider {
+public interface ParallelismAsyncTableFunctionProvider
+        extends AsyncTableFunctionProvider, ParallelismProvider {
+
+    /** Helper method for creating a AsyncTableFunction provider with a provided sink parallelism. */
+    static AsyncTableFunctionProvider of(AsyncTableFunction<RowData> asyncTableFunction, Integer parallelism) {
+        return new ParallelismAsyncTableFunctionProvider() {
+
+            @Override
+            public AsyncTableFunction<RowData> createAsyncTableFunction() {
+                return asyncTableFunction;
+            }
+
+            @Override
+            public Optional<Integer> getParallelism() {
+                return Optional.ofNullable(parallelism);
+            }
+        };
+    }
 
 }

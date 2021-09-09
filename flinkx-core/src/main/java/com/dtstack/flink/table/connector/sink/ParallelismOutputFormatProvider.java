@@ -20,11 +20,7 @@ package com.dtstack.flink.table.connector.sink;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.io.OutputFormat;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
-import org.apache.flink.table.connector.ParallelismProvider;
-import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.connector.sink.OutputFormatProvider;
-import org.apache.flink.table.connector.sink.SinkFunctionProvider;
 import org.apache.flink.table.data.RowData;
 
 import java.util.Optional;

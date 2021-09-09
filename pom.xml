@@ -25,6 +25,10 @@
 	</properties>
 
 	<dependencies>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+		</dependency>
 
 		<!-- Flink SQL -->
 		<dependency>
@@ -32,11 +36,7 @@
 			<artifactId>flink-table-api-java</artifactId>
 			<version>${flink.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-table-planner-blink_${scala.binary.version}</artifactId>
-			<version>${flink.version}</version>
-		</dependency>
+
 
 		<!--    <dependency>-->
 		<!--      <groupId>org.apache.flink</groupId>-->

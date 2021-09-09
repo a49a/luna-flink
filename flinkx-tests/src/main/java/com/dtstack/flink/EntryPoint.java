@@ -51,12 +51,12 @@ public class EntryPoint {
                 ") WITH (\n" +
                 "    'connector' = 'dt-mysql',\n" +
                 "    'url' = 'jdbc:mysql://localhost:3306/flink_dev',\n" +
-                "    'table-name' = 'ads_m',\n" +
+                "    'table-name' = 'dim_foo',\n" +
                 "    'username' = 'root',\n" +
                 "    'password' = 'root'\n" +
                 ")");
 
-        tEnv.executeSql("INSERT INTO ads SELECT id, name FROM ods");
+        tEnv.executeSql("INSERT INTO ads SELECT id, '中' AS name FROM ods");
 
     }
 

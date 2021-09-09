@@ -1,5 +1,7 @@
 package com.dtstack.flink.connector.kafka.table;
 
+import com.dtstack.flink.table.connector.source.ParallelismSourceFunctionProvider;
+
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
@@ -60,7 +62,7 @@ public class DtKafkaDynamicSource extends KafkaDynamicSource {
         final FlinkKafkaConsumer<RowData> kafkaConsumer =
                 createKafkaConsumer(keyDeserialization, valueDeserialization, producedTypeInfo);
 
-        return SourceFunctionProvider.of(kafkaConsumer, false);
+        return ParallelismSourceFunctionProvider.of(kafkaConsumer, false, 4);
     }
 
     @Override

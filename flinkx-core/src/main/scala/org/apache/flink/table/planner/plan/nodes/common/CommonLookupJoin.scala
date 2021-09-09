@@ -190,26 +190,34 @@ abstract class CommonLookupJoin(
     case t: LegacyTableSourceTable[_] => t.tableIdentifier
   }
 
-  // DTStack fixed customlized parallelism
-  lazy val parallelism: Integer = {
-    temporalTable match {
-      case t: TableSourceTable => {
-        val indices = lookupKeyIndicesInOrder.map(Array(_))
-        val tableSource = t.tableSource.asInstanceOf[LookupTableSource]
-        val providerContext = new LookupRuntimeProviderContext(indices)
-        val provider = tableSource.getLookupRuntimeProvider(providerContext)
-        val parallelismOptional = provider.asInstanceOf[ParallelismProvider].getParallelism
-        if (parallelismOptional.isPresent) {
-          val parallelismPassedIn = parallelismOptional.get().intValue()
-          if (parallelismPassedIn <= 0) {
-            throw new TableException(s"Table: ${tableIdentifier} configured sink parallelism: " +
-              s"$parallelismPassedIn should not be less than zero or equal to zero")
-          }
-          parallelismPassedIn
-        }
-      }
-    }
-  }
+//  // DTStack fixed customized parallelism
+//  lazy val parallelism = {
+//    temporalTable match {
+//      case t: TableSourceTable => {
+//        val indices = lookupKeyIndicesInOrder.map(Array(_))
+//        val tableSource = t.tableSource.asInstanceOf[LookupTableSource]
+//        val providerContext = new LookupRuntimeProviderContext(indices)
+//        val provider = tableSource.getLookupRuntimeProvider(providerContext)
+//        // TODO 判断没实现ParallelismProvider 接口的类
+//        if (provider.isInstanceOf[ParallelismProvider]) {
+//          val parallelismOptional = provider.asInstanceOf[ParallelismProvider].getParallelism
+//          if (parallelismOptional.isPresent) {
+//            val parallelismPassedIn = parallelismOptional.get().intValue()
+//            if (parallelismPassedIn <= 0) {
+//              throw new TableException(s"Table: ${tableIdentifier} configured sink parallelism: " +
+//                s"$parallelismPassedIn should not be less than zero or equal to zero")
+//            }
+//            parallelismPassedIn
+//          } else {
+//            // TODO Optional中没有值应给返回什么
+//            0
+//          }
+//        } else {
+//          0
+//        }
+//      }
+//    }
+//  }
 
   if (containsPythonCall(joinInfo.getRemaining(cluster.getRexBuilder))) {
     throw new TableException("Only inner join condition with equality predicates supports the " +
@@ -449,12 +457,47 @@ abstract class CommonLookupJoin(
       SimpleOperatorFactory.of(new ProcessOperator(processFunc))
     }
 
+    // DTStack fixed customized parallelism start
+    lazy val parallelism = {
+      temporalTable match {
+        case t: TableSourceTable => {
+          val indices = lookupKeyIndicesInOrder.map(Array(_))
+          val tableSource = t.tableSource.asInstanceOf[LookupTableSource]
+          val providerContext = new LookupRuntimeProviderContext(indices)
+          val provider = tableSource.getLookupRuntimeProvider(providerContext)
+          // TODO 判断没实现ParallelismProvider 接口的类
+          if (provider.isInstanceOf[ParallelismProvider]) {
+            val parallelismOptional = provider.asInstanceOf[ParallelismProvider].getParallelism
+            if (parallelismOptional.isPresent) {
+              val parallelismPassedIn = parallelismOptional.get().intValue()
+              if (parallelismPassedIn <= 0) {
+                throw new TableException(s"Table: ${tableIdentifier} configured sink parallelism: " +
+                  s"$parallelismPassedIn should not be less than zero or equal to zero")
+              }
+              parallelismPassedIn
+            } else {
+              // TODO Optional中没有值应给返回什么
+              0
+            }
+          } else {
+            0
+          }
+        }
+      }
+    }
+
+    val finalParallelism =  parallelism match {
+      case _ if parallelism > 0 => parallelism
+      case _ => inputTransformation.getParallelism
+    }
+
     ExecNode.createOneInputTransformation(
       inputTransformation,
       getRelDetailedDescription,
       operatorFactory,
       InternalTypeInfo.of(resultRowType),
-      inputTransformation.getParallelism)
+      finalParallelism)
+    // DTStack fixed customized parallelism end
   }
 
   private def rowTypeEquals(expected: TypeInformation[_], actual: TypeInformation[_]): Boolean = {
